@@ -1,0 +1,771 @@
+--[[
+    DEKUz X Hub | No 1 — Full UI + Fix
+    Delta Compatible | RightControl = เปิด/ปิด
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local VU = game:GetService("VirtualUser")
+local VIM = game:GetService("VirtualInputManager")
+local RS = game:GetService("ReplicatedStorage")
+local LP = Players.LocalPlayer
+
+repeat task.wait() until game:IsLoaded()
+local PlayerGui = LP:WaitForChild("PlayerGui")
+
+pcall(function()
+    if PlayerGui:FindFirstChild("DEKUzHub") then PlayerGui.DEKUzHub:Destroy() end
+    if PlayerGui:FindFirstChild("DEKUzOpen") then PlayerGui.DEKUzOpen:Destroy() end
+end)
+
+_G.FastAttack = false
+_G.AutoFarm = false
+_G.AutoRaid = false
+_G.AutoQuest = false
+_G.BringMob = false
+_G.Speed = false
+_G.Fly = false
+_G.AntiAFK = true
+_G.FruitESP = false
+_G.BringFruit = false
+_G.Noclip = false
+_G.WalkSpeed = 150
+_G.FarmDistance = 15
+_G.HitboxSize = 90
+
+local function HRP()
+    local c = LP.Character
+    return c and c:FindFirstChild("HumanoidRootPart")
+end
+local function Hum()
+    local c = LP.Character
+    return c and c:FindFirstChildOfClass("Humanoid")
+end
+
+-- ========== UI ==========
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "DEKUzHub"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 440, 0, 390)
+Main.Position = UDim2.new(0.5, -220, 0.5, -195)
+Main.BackgroundColor3 = Color3.fromRGB(12, 16, 28)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+local mc = Instance.new("UICorner")
+mc.CornerRadius = UDim.new(0, 10)
+mc.Parent = Main
+
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1, 0, 0, 36)
+Top.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+Top.BorderSizePixel = 0
+Top.Parent = Main
+local tc = Instance.new("UICorner")
+tc.CornerRadius = UDim.new(0, 10)
+tc.Parent = Top
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "DEKUz X Hub | No 1"
+Title.TextColor3 = Color3.fromRGB(220, 240, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Top
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -32, 0, 4)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = Top
+local cc = Instance.new("UICorner")
+cc.CornerRadius = UDim.new(0, 6)
+cc.Parent = CloseBtn
+
+local dragging, dragStart, startPos = false, nil, nil
+Top.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+    end
+end)
+Top.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local d = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+    end
+end)
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1, -16, 1, -48)
+Scroll.Position = UDim2.new(0, 8, 0, 42)
+Scroll.BackgroundColor3 = Color3.fromRGB(10, 14, 24)
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 5
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(0, 100, 200)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 850)
+Scroll.Parent = Main
+local sc = Instance.new("UICorner")
+sc.CornerRadius = UDim.new(0, 8)
+sc.Parent = Scroll
+
+local Lay = Instance.new("UIListLayout")
+Lay.Padding = UDim.new(0, 6)
+Lay.SortOrder = Enum.SortOrder.LayoutOrder
+Lay.Parent = Scroll
+local Pad = Instance.new("UIPadding")
+Pad.PaddingTop = UDim.new(0, 8)
+Pad.PaddingBottom = UDim.new(0, 12)
+Pad.PaddingLeft = UDim.new(0, 8)
+Pad.PaddingRight = UDim.new(0, 8)
+Pad.Parent = Scroll
+Lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Scroll.CanvasSize = UDim2.new(0, 0, 0, Lay.AbsoluteContentSize.Y + 20)
+end)
+
+local ord = 0
+local function addLabel(text)
+    ord = ord + 1
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -8, 0, 22)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = Color3.fromRGB(0, 160, 255)
+    l.Font = Enum.Font.GothamBold
+    l.TextSize = 13
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.LayoutOrder = ord
+    l.Parent = Scroll
+end
+
+local function addToggle(name, default, flag)
+    ord = ord + 1
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -8, 0, 32)
+    row.BackgroundColor3 = Color3.fromRGB(20, 28, 45)
+    row.BorderSizePixel = 0
+    row.LayoutOrder = ord
+    row.Parent = Scroll
+    local rc = Instance.new("UICorner")
+    rc.CornerRadius = UDim.new(0, 6)
+    rc.Parent = row
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -60, 1, 0)
+    lbl.Position = UDim2.new(0, 10, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = name
+    lbl.TextColor3 = Color3.fromRGB(220, 240, 255)
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 12
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = row
+
+    local on = default
+    _G[flag] = default
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(1, -52, 0.5, -11)
+    if on then
+        btn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+        btn.Text = "ON"
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
+        btn.Text = "OFF"
+    end
+    btn.TextColor3 = Color3.fromRGB(220, 240, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 10
+    btn.BorderSizePixel = 0
+    btn.Parent = row
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0, 6)
+    bc.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        on = not on
+        _G[flag] = on
+        if on then
+            btn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+            btn.Text = "ON"
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
+            btn.Text = "OFF"
+        end
+    end)
+end
+
+local function addSlider(name, default, minV, maxV, flag)
+    ord = ord + 1
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -8, 0, 50)
+    row.BackgroundColor3 = Color3.fromRGB(20, 28, 45)
+    row.BorderSizePixel = 0
+    row.LayoutOrder = ord
+    row.Parent = Scroll
+    local rc = Instance.new("UICorner")
+    rc.CornerRadius = UDim.new(0, 6)
+    rc.Parent = row
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -16, 0, 20)
+    lbl.Position = UDim2.new(0, 10, 0, 4)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = name .. ": " .. tostring(default)
+    lbl.TextColor3 = Color3.fromRGB(220, 240, 255)
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 12
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = row
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -20, 0, 8)
+    bar.Position = UDim2.new(0, 10, 0, 32)
+    bar.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
+    bar.BorderSizePixel = 0
+    bar.Parent = row
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0, 4)
+    bc.Parent = bar
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - minV) / (maxV - minV), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    fill.BorderSizePixel = 0
+    fill.Parent = bar
+    local fc = Instance.new("UICorner")
+    fc.CornerRadius = UDim.new(0, 4)
+    fc.Parent = fill
+
+    _G[flag] = default
+    local sliding = false
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            sliding = true
+        end
+    end)
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            sliding = false
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local rel = math.clamp((input.Position.X - bar.AbsolutePosition.X) / math.max(bar.AbsoluteSize.X, 1), 0, 1)
+            local val = math.floor(minV + (maxV - minV) * rel)
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            lbl.Text = name .. ": " .. tostring(val)
+            _G[flag] = val
+        end
+    end)
+end
+
+addLabel("--- Combat ---")
+addToggle("Fast Attack", false, "FastAttack")
+addToggle("Auto Farm", false, "AutoFarm")
+addToggle("Auto Raid", false, "AutoRaid")
+addToggle("Auto Quest", false, "AutoQuest")
+addToggle("Bring Mob", false, "BringMob")
+addSlider("Farm Height", 15, 8, 30, "FarmDistance")
+addSlider("Hitbox Size", 90, 40, 180, "HitboxSize")
+addLabel("--- Movement ---")
+addToggle("Speed Hack", false, "Speed")
+addSlider("WalkSpeed", 150, 16, 300, "WalkSpeed")
+addToggle("Fly (WASD+Space)", false, "Fly")
+addToggle("Noclip", false, "Noclip")
+addToggle("Anti AFK", true, "AntiAFK")
+addLabel("--- Fruit ---")
+addToggle("Fruit ESP", false, "FruitESP")
+addToggle("Bring Fruit", false, "BringFruit")
+
+local OpenGui = Instance.new("ScreenGui")
+OpenGui.Name = "DEKUzOpen"
+OpenGui.ResetOnSpawn = false
+OpenGui.Parent = PlayerGui
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Size = UDim2.new(0, 120, 0, 34)
+OpenBtn.Position = UDim2.new(0, 12, 0.5, -17)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+OpenBtn.Text = "Open Hub"
+OpenBtn.TextColor3 = Color3.fromRGB(220, 240, 255)
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextSize = 12
+OpenBtn.Visible = false
+OpenBtn.BorderSizePixel = 0
+OpenBtn.Parent = OpenGui
+local oc = Instance.new("UICorner")
+oc.CornerRadius = UDim.new(0, 8)
+oc.Parent = OpenBtn
+
+CloseBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    OpenBtn.Visible = true
+end)
+OpenBtn.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    OpenBtn.Visible = false
+end)
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        Main.Visible = not Main.Visible
+        OpenBtn.Visible = not Main.Visible
+    end
+end)
+
+print("[DEKUz] UI Loaded")
+
+-- ========== COMBAT CORE ==========
+local function Equip()
+    pcall(function()
+        local c = LP.Character
+        if not c then return end
+        for _, t in pairs(c:GetChildren()) do
+            if t:IsA("Tool") then return end
+        end
+        local bag = LP:FindFirstChild("Backpack")
+        if not bag then return end
+        for _, t in pairs(bag:GetChildren()) do
+            if t:IsA("Tool") then
+                local h = Hum()
+                if h then h:EquipTool(t) end
+                return
+            end
+        end
+    end)
+end
+
+local AC = nil
+spawn(function()
+    pcall(function()
+        local ok, cf = pcall(function()
+            return require(LP.PlayerScripts:WaitForChild("CombatFramework", 3))
+        end)
+        if ok then AC = cf end
+    end)
+    pcall(function()
+        if getgc then
+            for _, v in pairs(getgc(true)) do
+                if type(v) == "table" and rawget(v, "activeController") then
+                    AC = v
+                    break
+                end
+            end
+        end
+    end)
+end)
+
+local function StopShake()
+    pcall(function()
+        local u = RS:FindFirstChild("Util")
+        if u and u:FindFirstChild("CameraShaker") then
+            local Cam = require(u.CameraShaker)
+            if Cam and Cam.Stop then Cam:Stop() end
+        end
+    end)
+end
+
+local function DoAttack()
+    StopShake()
+    pcall(function()
+        if AC and AC.activeController then
+            local c = AC.activeController
+            c.timeToNextAttack = 0
+            c.attacking = false
+            c.blocking = false
+            c.hitboxMagnitude = _G.HitboxSize or 90
+            c.increment = 4
+            if c.focusStart then c.focusStart = 0 end
+        end
+    end)
+    pcall(function()
+        VU:CaptureController()
+        VU:Button1Down(Vector2.new(0, 0))
+    end)
+    task.wait(0.025)
+    pcall(function()
+        VU:Button1Up(Vector2.new(0, 0))
+    end)
+    pcall(function()
+        local cam = workspace.CurrentCamera
+        local x, y = 500, 300
+        if cam then
+            x = cam.ViewportSize.X / 2
+            y = cam.ViewportSize.Y / 2
+        end
+        VIM:SendMouseButtonEvent(x, y, 0, true, game, 1)
+        task.wait(0.02)
+        VIM:SendMouseButtonEvent(x, y, 0, false, game, 1)
+    end)
+    pcall(function()
+        local c = LP.Character
+        if c then
+            local t = c:FindFirstChildOfClass("Tool")
+            if t then t:Activate() end
+        end
+    end)
+end
+
+local function GetEnemy(maxDist)
+    local h = HRP()
+    if not h then return nil end
+    local near, best = nil, maxDist or 8000
+    local folder = workspace:FindFirstChild("Enemies")
+    if not folder then return nil end
+    for _, m in pairs(folder:GetChildren()) do
+        local mh = m:FindFirstChild("HumanoidRootPart")
+        local hum = m:FindFirstChildOfClass("Humanoid")
+        if mh and hum and hum.Health > 0 and not Players:GetPlayerFromCharacter(m) then
+            local d = (h.Position - mh.Position).Magnitude
+            if d < best then
+                near = m
+                best = d
+            end
+        end
+    end
+    return near
+end
+
+local function GetFarEnemy(minDist)
+    local h = HRP()
+    if not h then return nil end
+    local best, bestD = nil, math.huge
+    local folder = workspace:FindFirstChild("Enemies")
+    if not folder then return nil end
+    minDist = minDist or 80
+    for _, m in pairs(folder:GetChildren()) do
+        local mh = m:FindFirstChild("HumanoidRootPart")
+        local hum = m:FindFirstChildOfClass("Humanoid")
+        if mh and hum and hum.Health > 0 and not Players:GetPlayerFromCharacter(m) then
+            local d = (h.Position - mh.Position).Magnitude
+            if d > minDist and d < bestD then
+                best = m
+                bestD = d
+            end
+        end
+    end
+    return best
+end
+
+local function BringMobs(pos)
+    pcall(function()
+        local folder = workspace:FindFirstChild("Enemies")
+        if not folder then return end
+        for _, m in pairs(folder:GetChildren()) do
+            local mh = m:FindFirstChild("HumanoidRootPart")
+            local hum = m:FindFirstChildOfClass("Humanoid")
+            if mh and hum and hum.Health > 0 then
+                local d = (mh.Position - pos).Magnitude
+                if d < 250 and d > 5 then
+                    mh.CFrame = CFrame.new(pos + Vector3.new(math.random(-2, 2), 0, math.random(-2, 2)))
+                    mh.CanCollide = false
+                    mh.Velocity = Vector3.new(0, 0, 0)
+                end
+            end
+        end
+    end)
+end
+
+-- ========== LOOPS ==========
+
+-- คลิกอัตโนมัติ
+spawn(function()
+    while true do
+        if _G.FastAttack or _G.AutoFarm or _G.AutoRaid then
+            Equip()
+            DoAttack()
+            task.wait(0.04)
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not (_G.FastAttack or _G.AutoFarm or _G.AutoRaid) then return end
+    pcall(function()
+        if AC and AC.activeController then
+            local c = AC.activeController
+            c.timeToNextAttack = 0
+            c.hitboxMagnitude = _G.HitboxSize or 90
+            c.attacking = false
+        end
+    end)
+end)
+
+-- Auto Farm บินสูงบนหัว
+spawn(function()
+    while true do
+        task.wait(0.08)
+        if _G.AutoFarm then
+            pcall(function()
+                Equip()
+                local enemy = GetEnemy(5000)
+                local h = HRP()
+                if enemy and h then
+                    local eh = enemy:FindFirstChild("HumanoidRootPart")
+                    if eh then
+                        local height = _G.FarmDistance or 15
+                        if height < 12 then height = 15 end
+                        h.CFrame = CFrame.new(eh.Position + Vector3.new(0, height, 0), eh.Position)
+                        h.Velocity = Vector3.new(0, 0, 0)
+                        if _G.BringMob then BringMobs(eh.Position) end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Auto Raid วาร์ปเกาะถัดไป
+spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.AutoRaid then
+            pcall(function()
+                Equip()
+                local h = HRP()
+                if not h then return end
+                local near = GetEnemy(120)
+                if near then
+                    local eh = near:FindFirstChild("HumanoidRootPart")
+                    if eh then
+                        h.CFrame = CFrame.new(eh.Position + Vector3.new(0, 18, 0), eh.Position)
+                        h.Velocity = Vector3.new(0, 0, 0)
+                        if _G.BringMob then BringMobs(eh.Position) end
+                        return
+                    end
+                end
+                local far = GetFarEnemy(60)
+                if not far then far = GetEnemy(10000) end
+                if far then
+                    local eh = far:FindFirstChild("HumanoidRootPart")
+                    if eh then
+                        h.CFrame = CFrame.new(eh.Position + Vector3.new(0, 20, 0), eh.Position)
+                        h.Velocity = Vector3.new(0, 0, 0)
+                    end
+                else
+                    local map = workspace:FindFirstChild("Map")
+                    if map then
+                        for _, isl in pairs(map:GetChildren()) do
+                            local part = isl:FindFirstChildWhichIsA("BasePart", true)
+                            if part and (h.Position - part.Position).Magnitude > 100 then
+                                h.CFrame = part.CFrame + Vector3.new(0, 25, 0)
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Auto Quest
+spawn(function()
+    while true do
+        task.wait(2.5)
+        if _G.AutoQuest or _G.AutoFarm then
+            pcall(function()
+                local h = HRP()
+                if not h then return end
+                local npcs = workspace:FindFirstChild("NPCs")
+                if npcs then
+                    for _, npc in pairs(npcs:GetChildren()) do
+                        local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
+                        if part and (h.Position - part.Position).Magnitude < 35 then
+                            local cd = npc:FindFirstChildOfClass("ClickDetector")
+                            if cd and fireclickdetector then
+                                pcall(function() fireclickdetector(cd) end)
+                            end
+                            local pp = npc:FindFirstChildWhichIsA("ProximityPrompt", true)
+                            if pp and fireproximityprompt then
+                                pcall(function() fireproximityprompt(pp) end)
+                            end
+                        end
+                    end
+                end
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("ClickDetector") then
+                        local p = obj.Parent
+                        local part = p and (p:IsA("BasePart") and p or p:FindFirstChildWhichIsA("BasePart"))
+                        if part and (h.Position - part.Position).Magnitude < 40 then
+                            local n = string.lower(tostring(p and p.Name or ""))
+                            if string.find(n, "quest") or string.find(n, "giver") or string.find(n, "adventurer") then
+                                if fireclickdetector then pcall(function() fireclickdetector(obj) end) end
+                            end
+                        end
+                    elseif obj:IsA("ProximityPrompt") then
+                        local p = obj.Parent
+                        local part = p and (p:IsA("BasePart") and p or p:FindFirstChildWhichIsA("BasePart"))
+                        if part and (h.Position - part.Position).Magnitude < 40 then
+                            if fireproximityprompt then pcall(function() fireproximityprompt(obj) end) end
+                        end
+                    end
+                end
+                local pg = LP:FindFirstChild("PlayerGui")
+                if pg then
+                    for _, gui in pairs(pg:GetDescendants()) do
+                        if gui:IsA("TextButton") or gui:IsA("ImageButton") then
+                            local t = string.lower(tostring(gui.Text or "") .. tostring(gui.Name or ""))
+                            if string.find(t, "accept") or string.find(t, "confirm") or string.find(t, "yes") then
+                                if gui.Visible then
+                                    if firesignal then pcall(function() firesignal(gui.MouseButton1Click) end) end
+                                    pcall(function()
+                                        if getconnections then
+                                            for _, conn in pairs(getconnections(gui.MouseButton1Click)) do
+                                                pcall(function() conn:Fire() end)
+                                            end
+                                        end
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Speed
+RunService.RenderStepped:Connect(function()
+    if _G.Speed then
+        pcall(function()
+            local h = Hum()
+            if h then h.WalkSpeed = _G.WalkSpeed or 150 end
+        end)
+    end
+end)
+
+-- Fly
+local wasFly = false
+RunService.RenderStepped:Connect(function()
+    if not _G.Fly then
+        if wasFly then
+            pcall(function()
+                local h = Hum()
+                if h then h.PlatformStand = false end
+            end)
+            wasFly = false
+        end
+        return
+    end
+    wasFly = true
+    pcall(function()
+        local hrp = HRP()
+        local hum = Hum()
+        if not hrp or not hum then return end
+        hum.PlatformStand = true
+        local cam = workspace.CurrentCamera
+        local dir = Vector3.new(0, 0, 0)
+        local spd = (_G.WalkSpeed or 150) * 0.5
+        if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
+        if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir = dir - Vector3.new(0, 1, 0) end
+        if dir.Magnitude > 0 then
+            hrp.CFrame = hrp.CFrame + dir.Unit * spd * 0.05
+        end
+        hrp.Velocity = Vector3.new(0, 0, 0)
+    end)
+end)
+
+-- Noclip
+RunService.Stepped:Connect(function()
+    if not (_G.Noclip or _G.AutoFarm or _G.AutoRaid or _G.Fly) then return end
+    pcall(function()
+        local c = LP.Character
+        if not c then return end
+        for _, p in pairs(c:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
+        end
+    end)
+end)
+
+-- Fruit ESP
+spawn(function()
+    while true do
+        task.wait(1.5)
+        if _G.FruitESP then
+            pcall(function()
+                for _, o in pairs(workspace:GetChildren()) do
+                    if o:IsA("Tool") and o:FindFirstChild("Handle") and string.find(string.lower(o.Name), "fruit") then
+                        if not o:FindFirstChild("DEKUzESP") then
+                            local bb = Instance.new("BillboardGui")
+                            bb.Name = "DEKUzESP"
+                            bb.Size = UDim2.new(0, 110, 0, 26)
+                            bb.AlwaysOnTop = true
+                            bb.Adornee = o.Handle
+                            bb.Parent = o
+                            local t = Instance.new("TextLabel")
+                            t.Size = UDim2.new(1, 0, 1, 0)
+                            t.BackgroundTransparency = 1
+                            t.Text = o.Name
+                            t.TextColor3 = Color3.fromRGB(0, 200, 255)
+                            t.Font = Enum.Font.GothamBold
+                            t.TextSize = 12
+                            t.Parent = bb
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Bring Fruit
+spawn(function()
+    while true do
+        task.wait(0.5)
+        if _G.BringFruit then
+            pcall(function()
+                local h = HRP()
+                if not h then return end
+                for _, o in pairs(workspace:GetChildren()) do
+                    if o:IsA("Tool") and o:FindFirstChild("Handle") and string.find(string.lower(o.Name), "fruit") then
+                        o.Handle.CFrame = h.CFrame
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Anti AFK
+spawn(function()
+    while true do
+        task.wait(60)
+        if _G.AntiAFK then
+            pcall(function()
+                VU:CaptureController()
+                VU:ClickButton2(Vector2.new())
+            end)
+        end
+    end
+end)
+
+print("[DEKUz] Full UI+Fix Ready")
+print("ถืออาวุธ -> Fast Attack + Auto Farm")
+print("Farm Height 15-20 | Hitbox 80-100")
+print("Raid: เข้าเรดก่อน -> Auto Raid")
